@@ -1,6 +1,6 @@
 ## Tag-Based Item Generation in Valantis
 
-<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/InventoryPicture.png" alt="Inventory screen in Valantis, with a rare item selected.">
+<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/11-23-Item-Generation/InventoryPicture.png" alt="Inventory screen in Valantis, with a rare item selected.">
 
 ### How Items Work in Valantis
 
@@ -20,7 +20,7 @@ First, we generate the basic framework for us to work within. We need an item ra
 
 For item type, we do something similar. If an item type is specified, then we pick that type. otherwise we generate Equipment 40% of the time and Echoes 60% of the time. The reason for this uneven distribution is because the player has 2 abilities they can add Equipment to, while they have 3 abilities they can add Echoes to. There is one more aspect to item type selection, if an icon is restricted to a specific item type, we select that item type. In that way, content and game events can specify a specific icon for a quest reward or unique item or something similar, and the generator will handle making sure that item follows the conventions we've set out for items with that icon.
 
-<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/RarityExamples.png" alt="Example Items of each rarity">
+<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/11-23-Item-Generation/RarityExamples.png" alt="Example Items of each rarity">
 
 ## Effects: Making Items Useful
 
@@ -34,15 +34,15 @@ In order to get a doubled effect though, you'd have to have the surplus effect p
 
 When your first effect slot is rolled, negative effects are included in the pool. These might decrease a stat, create some sort of penalty when an action happens, or give you a negative status effect at a given time. In return for this, however, the item generator will award the item with another effect point. This can't happen to common items, because they only have one effect slot anyway, but if you get a negative effect on a rare or greater item, it is going to force the generator to give you at least one doubled effect, because at the end of item generation, it needs to have 0 effect points left if possible, using only the slots it has available for that rarity. To use rare as an example again, the item starts generation with 2 slots and 2 points. If you roll a negative effect, it will use up the slot but actually refund an extra point in addition to not using up a point,. So it now has 1 slot left but 3 points, and will always generate a doubled effect to get as close to 0 as possible. For epic and legendary items, a negative effect will actually guarantee you get at least two doubled effects. While this system means sometimes you can get rare items that are weaker than they would normally be, epic and legendary items have clear advantages when they roll negatives. The hope with this system is to create some diversity in the item effects that are generated, as well as encourage more interesting character builds and loadouts, as you have extra powerful items, with downsides to consider for one ability over another.
 
-<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/NegativeAndDoubleEffects.png" alt="A negative and double effect">
+<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/11-23-Item-Generation/NegativeAndDoubleEffects.png" alt="A negative and double effect">
 
 At the very beginning of this section I mentioned that the effect selection looks at all "applicable" effects. Before we move on, we need to understand what could make an effect applicable or not. First, negative effects are only applicable when we're looking at the first effect slot, and doubled effects are only applicable when we have more points left than slots or if we pass the "random double" check and have at least 2 points. We also don't allow duplicate effects, so any effects already on the item are ineligible. The most interesting filter however, has to do with making the items more thematic. When effects are being selected for application, they're filtered by a tag system. The context coming into the generator provides two lists of tags, CompatableTags and RestrictedTags. These are passed in by the game when an item is requested. In the case of dialogue events, we can pass in tags that represent the player receiving the item, the NPC giving it, maybe some tags specific to the dialogue that triggered the item generation (like a quest reward dialogue) or any number of other things. These tags are easy, designer friendly ways to massage the item output of the generator. I can pass in some stuff saying, "the character who is giving you this item is a Flameshaper, and they're giving you Gloves," and the generator can use these tags to inform its choices. This makes it more likely, but not guaranteed, that if you talk to this Flameshaper NPC, you'll probably get an Equipment item, perhaps even gloves specifically, that probably enhance stats for Flameshaper characters, or have something to do with fire.  
 
-<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/TagsExample.png" alt="Some Tags on an item">
+<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/11-23-Item-Generation/TagsExample.png" alt="Some Tags on an item">
 
 In order to take advantage of these tags, in the effects data, we define compatible and restricted tags for each effect alongside the rest of it's data. If you pass in tags alluding to Fire and Equipment, then any effects that are tagged as Echo related effects, or Water based effects, might filter themselves out based on the context's restricted tags. Essentially, The more CompatibleTags are shared between the generator context and the effect, the more likely it is to be picked, and if any of the context or effects restricted tags are found in the compatible tags, the effect will be self-selected out of the pool. Finally, there is a positive feedback loop included, as each effect, once selected, will add it's own compatible and restricted tag lists to the generator's context, further filtering subsequent effect choices. This means that for items with many effects, like epic and legendary items, the effects on them will have increasingly high cohesion with each other as they go. This is the first breadcrumb we leave players to help them create a story out of these items.
 
-<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/TagsOnEffectData.png" alt="Tags on an Effect definition">
+<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/11-23-Item-Generation/TagsOnEffectData.png" alt="Tags on an Effect definition">
 
 The effects give the item its mechanical use in the game, and can start to tell a story, but now we need to shift into visually representing that to the player through the item icon itself.
 
@@ -50,7 +50,7 @@ The effects give the item its mechanical use in the game, and can start to tell 
 
 Compared to the effects generation, sprite generation is pretty simple. We have a database of possible item icons, each tagged with a set of Compatible and RestrictedTags just like the effects were. Now, similarly to how we chose effects with some weighted priority for ones with more shared CompatibleTags, we pick sprites this way too. The only difference is that unlike effects, where we preferred options with more shared tags, for sprites we actually exclude any "neutral" options where none of the tags match. Since we're cautious with RestrictedTags and pretty generous with CompatibleTags, we don't have likely situations where we can't find an option, although if we did we have a backup just in case. For sprites, forcing more explicit compatibility with the tags already on the items means that if we've done our job correctly in the design and tagging phase, every item should visually match the effects and situation the item came from.
 
-<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/SpriteTags.png" alt="The sprite tags for that same item">
+<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/11-23-Item-Generation/SpriteTags.png" alt="The sprite tags for that same item">
 
 ## Names: Unique, but Relevant
 
@@ -64,7 +64,7 @@ We start with the general idea the prefix and suffix system is based on, but we 
 
 To do this, Effects and Sprites have a dictionary of Name Tokens added to their data. These tokens can come from different categories, like Nouns, Adjectives, ItemTypes, Virtues, Elements, Locations, Groups and others. At first, all categories were available to both effects and sprites, but this caused some weird and repetitive combinations. After some testing, I found it was best to restrict more concrete words, like nouns and item types, to the sprites, as they visually represent the item and are more closely linked in the player's mind to what the item *is*. There's a couple of categories that can overlap, like possessive nouns, but for the most part, the more concrete categories are on sprites and the more descriptive or abstract ones are on the effects.
 
-<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/NameTokensAndTemplate.png" alt="Name Tokens">
+<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/11-23-Item-Generation/NameTokensAndTemplate.png" alt="Name Tokens">
 
 When we generate a name, we gather all the available tokens for the sprite and effects by categories, and then we select a random name template from a set of possible templates. These templates are just a set of phrase structures for replacement, like "{Adjective} {Noun} of {Virtue}" or "{Possessive} {ItemType} of {Element}". The generator looks until it finds a template that it can fill with the categories that the item has available. If none of the effects or the sprite had any Element tokens, then templates using an Element token will be discarded and the next template will be selected.
 
@@ -77,7 +77,7 @@ As an example, I ran the generator on a sprite of a book, which means all of the
  - Haunting Codex
  - Seraphina's Compendium of Altrusim
 
-<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/BookItems.png" alt="Some Example Books">
+<img src="https://raw.githubusercontent.com/NatickGames/natickgames.github.io/main/assets/11-23-Item-Generation/BookItems.png" alt="Some Example Books">
 
 The great part about this system is that as I see sub-par names generated in testing, it's simply a matter of tweaking the weights or adding/removing either name tokens or templates from the various effects and sprites. It's easy to add tokens to commonly used sprites or effects for greater variety, or to remove templates that read awkwardly when generated. When running the tests here to create these examples, I noticed that there were too many results that were just flavor with no mechanical description. Books seemed to pick short templates with little description a little too often, and it was easy to go look at the available templates and tokens on the book sprite and see why this might be the case.
 
